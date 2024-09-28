@@ -1,8 +1,6 @@
 package cl.smartsolutions.ivncompose.activity
 
-import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,7 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cl.smartsolutions.ivnapp.model.User
-import cl.smartsolutions.ivncompose.repository.UserRepository
+import cl.smartsolutions.ivncompose.firebase.UserRepository
 import cl.smartsolutions.ivncompose.ui.theme.IvnComposeTheme
 import cl.smartsolutions.ivncompose.R
 
@@ -61,6 +59,7 @@ fun RegisterScreen(
     val isFormValid = name.isNotBlank() && lastName.isNotBlank() && email.isNotBlank() && age.isNotBlank() && password.isNotBlank()
 
     val context = LocalContext.current
+
     val gradientColors = listOf(
         Color(0xFFFFFFFF),
         Color(0xFF030A25)
@@ -99,7 +98,9 @@ fun RegisterScreen(
 
         OutlinedTextField(
             value = rut,
-            onValueChange = { rut = it },
+            onValueChange = {
+                if (it.matches(Regex("^[0-9kK-]*$"))) rut = it
+            },
             label = { Text("Rut", color = Color.Black) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -109,7 +110,9 @@ fun RegisterScreen(
 
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = {
+                if (it.matches(Regex("^[a-zA-Z ]*$"))) name = it
+            },
             label = { Text("Nombre", color = Color.Black) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -119,7 +122,9 @@ fun RegisterScreen(
 
         OutlinedTextField(
             value = lastName,
-            onValueChange = { lastName = it },
+            onValueChange = {
+                if (it.matches(Regex("^[a-zA-Z ]*$"))) lastName = it
+            },
             label = { Text("Apellido", color = Color.Black) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -137,12 +142,14 @@ fun RegisterScreen(
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Email
             ),
-            colors = TextFieldDefaults.colors(Color.Black,Color.Black)
+            colors = TextFieldDefaults.colors(Color.Black, Color.Black)
         )
 
         OutlinedTextField(
             value = age,
-            onValueChange = { age = it },
+            onValueChange = {
+                if (it.matches(Regex("^[0-9]*$"))) age = it
+            },
             label = { Text("Edad", color = Color.Black) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -170,22 +177,19 @@ fun RegisterScreen(
 
         Button(
             onClick = {
-                if (UserRepository.getUsers().size < 5) {
-                    val newUser = User(
-                        rut = rut,
-                        firstName = name,
-                        lastName = lastName,
-                        email = email,
-                        password = password,
-                        age = age.toInt()
-                    )
-                    UserRepository.createUser(newUser)
-                    Toast.makeText(context, "Usuario registrado correctamente", Toast.LENGTH_LONG).show()
-                    val intent = Intent(context, LoginActivity::class.java)
-                    context.startActivity(intent)
-                } else {
-                    Toast.makeText(context, "No se pueden crear más usuarios", Toast.LENGTH_LONG).show()
-                }
+
+                val newUser = User(
+                    rut = rut,
+                    firstName = name,
+                    lastName = lastName,
+                    email = email,
+                    password = password,
+                    age = age.toInt()
+                )
+
+                val userMap = mapOf(newUser.getRut() to newUser)
+                UserRepository.sendInfoFirebaseUser(userMap)
+
             },
             enabled = isFormValid,
             modifier = Modifier.fillMaxWidth()
