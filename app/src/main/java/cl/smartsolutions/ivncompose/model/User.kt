@@ -8,6 +8,8 @@ data class User(
     private var password: String,
     private var age: Int) {
 
+    constructor() : this("", "", "", "", "", 0)
+
     fun getRut(): String {
         return rut;
     }

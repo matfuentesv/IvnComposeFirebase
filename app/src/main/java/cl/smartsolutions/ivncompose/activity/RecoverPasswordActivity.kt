@@ -28,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.smartsolutions.ivncompose.R
 import cl.smartsolutions.ivncompose.activity.ui.theme.IvnComposeTheme
-import cl.smartsolutions.ivncompose.firebase.UserRepository
 import java.util.*
 
 class RecoverPasswordActivity : ComponentActivity(), TextToSpeech.OnInitListener {

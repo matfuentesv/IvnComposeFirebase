@@ -1,5 +1,7 @@
 package cl.smartsolutions.ivncompose.activity
 
+import UserRepository.getUserByEmail
+import UserRepository.validateLoginFirebase
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
@@ -33,9 +35,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cl.smartsolutions.ivnapp.model.User
 import cl.smartsolutions.ivncompose.R
 import cl.smartsolutions.ivncompose.activity.ui.theme.IvnComposeTheme
-import cl.smartsolutions.ivncompose.firebase.UserRepository
+
 import java.util.*
 
 class LoginActivity : ComponentActivity(), TextToSpeech.OnInitListener {
@@ -112,15 +115,36 @@ class LoginActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                     Button(
                         onClick = {
-                            val user = UserRepository.validateUserByEmail(email)
-                            if (user != null && user.getPassword() == password) {
-                                val intent = Intent(this@LoginActivity, NotesActivity::class.java)
-                                intent.putExtra("loggedInUser", user.getFirstName())
-                                startActivity(intent)
-                                showLoginErrorFeedback(" bienvenido ${user.getFirstName()}")
-                            } else {
-                                showLoginErrorFeedback("Usuario y/o contraseña incorrecta")
+
+                            validateLoginFirebase(email, password) { isSuccess, errorMessage ->
+                                if (isSuccess) {
+                                    // Obtenemos el usuario por el email para acceder a sus datos
+                                    getUserByEmail(email) { user, userErrorMessage ->
+                                        if (user != null) {
+                                            // Comparamos la contraseña
+                                            if (user.getPassword() == password) {
+                                                // Si la contraseña es correcta, iniciamos la actividad NotesActivity
+                                                val intent = Intent(this@LoginActivity, NotesActivity::class.java)
+                                                intent.putExtra("loggedInUser", user.getFirstName()) // Pasamos el nombre del usuario
+                                                startActivity(intent)
+
+                                                // Mostramos feedback de bienvenida
+                                                showLoginErrorFeedback("Bienvenido ${user.getFirstName()}")
+                                            } else {
+                                                // Si la contraseña es incorrecta
+                                                showLoginErrorFeedback("Usuario y/o contraseña incorrecta")
+                                            }
+                                        } else {
+                                            // Si no se encuentra el usuario, mostramos el mensaje de error
+                                            showLoginErrorFeedback(userErrorMessage ?: "Error desconocido al obtener usuario")
+                                        }
+                                    }
+                                } else {
+                                    // Si hubo un error en la validación del login (conexión o error genérico)
+                                    showLoginErrorFeedback(errorMessage ?: "Error desconocido durante el login")
+                                }
                             }
+
                         },
                         enabled = isLoginEnabled,
                         modifier = Modifier
