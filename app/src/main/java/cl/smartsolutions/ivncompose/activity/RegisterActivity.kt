@@ -4,7 +4,6 @@ import UserRepository.registerUserFirebase
 import UserRepository.validateUserExistFirebase
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import cl.smartsolutions.ivnapp.model.User
 import cl.smartsolutions.ivncompose.ui.theme.IvnComposeTheme
 import cl.smartsolutions.ivncompose.R
+import kotlinx.coroutines.launch
 
 class RegisterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +64,8 @@ fun RegisterScreen(
 
     var attemptedSubmit by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     val isFormValid = name.isNotBlank() && lastName.isNotBlank() && email.isNotBlank() && age.isNotBlank() && password.isNotBlank() &&
             rutError.isEmpty() && nameError.isEmpty() && lastNameError.isEmpty() && emailError.isEmpty() && ageError.isEmpty() && passwordError.isEmpty()
@@ -266,17 +268,23 @@ fun RegisterScreen(
 
                         validateUserExistFirebase(newUser.getRut()) { exists ->
                             if (exists) {
-                                Toast.makeText(context, "El usuario ya existe", Toast.LENGTH_LONG).show()
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("El usuario ya existe")
+                                }
                                 isLoading = false
                             } else {
                                 registerUserFirebase(newUser, onSuccess = {
                                     isLoading = false
-                                    Toast.makeText(context, "Usuario registrado correctamente", Toast.LENGTH_LONG).show()
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Usuario registrado correctamente")
+                                    }
                                     val intent = Intent(context, LoginActivity::class.java)
                                     context.startActivity(intent)
                                 }, onFailure = { errorMessage ->
                                     isLoading = false
-                                    Toast.makeText(context, "Error al registrar: $errorMessage", Toast.LENGTH_LONG).show()
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Error al registrar: $errorMessage")
+                                    }
                                 })
                             }
                         }
@@ -299,7 +307,6 @@ fun RegisterScreen(
             }
         }
 
-
         if (isLoading) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -308,6 +315,18 @@ fun RegisterScreen(
                 CircularProgressIndicator()
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            snackbar = { snackbarData ->
+                Snackbar(
+                    snackbarData = snackbarData,
+                    containerColor = Color(0xFF2196F3),
+                    contentColor = Color.White
+                )
+            },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
