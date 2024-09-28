@@ -51,6 +51,7 @@ class RegisterActivity : ComponentActivity() {
 fun RegisterScreen(
     onBackPressed: () -> Unit
 ) {
+    var rut by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -94,6 +95,16 @@ fun RegisterScreen(
             painter = painterResource(R.drawable.logo),
             contentDescription = null,
             modifier = Modifier.size(100.dp)
+        )
+
+        OutlinedTextField(
+            value = rut,
+            onValueChange = { rut = it },
+            label = { Text("Rut", color = Color.Black) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            colors = TextFieldDefaults.colors(Color.Black,Color.Black)
         )
 
         OutlinedTextField(
@@ -161,6 +172,7 @@ fun RegisterScreen(
             onClick = {
                 if (UserRepository.getUsers().size < 5) {
                     val newUser = User(
+                        rut = rut,
                         firstName = name,
                         lastName = lastName,
                         email = email,

@@ -1,13 +1,17 @@
 package cl.smartsolutions.ivnapp.model
 
 data class User(
+    private var rut: String,
     private var firstName: String,
     private var lastName: String,
     private var email: String,
     private var password: String,
     private var age: Int) {
 
-    // Getters
+    fun getRut(): String {
+        return rut;
+    }
+
     fun getEmail(): String {
         return email
     }
@@ -28,7 +32,10 @@ data class User(
         return age
     }
 
-    // Setters
+    fun setRut(rut:String) {
+        this.rut = rut;
+    }
+
     fun setEmail(email: String) {
         this.email = email
     }
@@ -49,9 +56,5 @@ data class User(
         this.age = age
     }
 
-    // Método para mostrar la información del usuario
-    fun getUserInfo(): String {
-        return "User(email='$email', password='$password', firstName='$firstName', lastName='$lastName', age=$age)"
-    }
 
 }
