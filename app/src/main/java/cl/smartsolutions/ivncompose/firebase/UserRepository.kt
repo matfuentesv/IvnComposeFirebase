@@ -9,33 +9,61 @@ import com.google.firebase.database.ValueEventListener
 object UserRepository {
 
 
-    fun sendInfoFirebaseUser(user: Map<String, User>) {
 
-        // Se valida previamente la conexion con Firebase
-        val connectedRef = FirebaseDatabase.getInstance().getReference(".info/connected")
+    fun validateUserExistFirebase(rut: String, onResult: (Boolean) -> Unit) {
 
-
-        connectedRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val connected = snapshot.getValue(Boolean::class.java) ?: false
-                if (connected) {
-                    println("Conectado a Firebase!")
-
-                    val databaseRef = FirebaseDatabase.getInstance().reference.child("Users")
-                    databaseRef.setValue(user).addOnSuccessListener {
-                        println("Datos enviados correctamente!")
-                    }.addOnFailureListener { error ->
-                        println("Error al enviar los datos: ${error.message}")
+        checkFirebaseConnection { isConnected ->
+            if (isConnected) {
+                val databaseRef = FirebaseDatabase.getInstance().reference.child("Users").child(rut)
+                databaseRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        onResult(dataSnapshot.exists())
                     }
-                } else {
-                    println("No conectado a Firebase.")
+
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        println("Error al verificar si el RUT existe: ${databaseError.message}")
+                        onResult(false)
+                    }
+                })
+            } else {
+                println("No se pudo conectar a Firebase.")
+                onResult(false)
+            }
+        }
+    }
+
+
+    fun registerUserFirebase(user: User, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+
+        checkFirebaseConnection { isConnected ->
+            if (isConnected) {
+                val databaseRef = FirebaseDatabase.getInstance().reference.child("Users").child(user.getRut())
+                databaseRef.setValue(user).addOnSuccessListener {
+                    onSuccess()
+                }.addOnFailureListener { error ->
+                    onFailure(error.message ?: "Error")
                 }
             }
+        }
+    }
+
+    fun checkFirebaseConnection(onConnected: (Boolean) -> Unit) {
+        val connectedRef = FirebaseDatabase.getInstance().getReference(".info/connected")
+        connectedRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val connected = snapshot.getValue(Boolean::class.java) ?: false
+                onConnected(connected)
+            }
+
             override fun onCancelled(error: DatabaseError) {
                 println("Error al verificar la conexión: ${error.message}")
+                onConnected(false)
             }
         })
     }
+
+
+
 
 
     private val users = mutableListOf(

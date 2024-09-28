@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "592521817737",
+    "firebase_url": "https://inclusive-voz-app-default-rtdb.firebaseio.com",
+    "project_id": "inclusive-voz-app",
+    "storage_bucket": "inclusive-voz-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:592521817737:android:336a049934bd2649656058",
+        "android_client_info": {
+          "package_name": "cl.smartsolutions.ivncompose"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfUNXMVxDNu7-f34NoBkWvJ3kneeKuliw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
