@@ -23,12 +23,29 @@ object NotesRepository {
                 }
                 onNotesLoaded(notesList)
             }
+
             override fun onCancelled(databaseError: DatabaseError) {
                 onFailure(Exception(databaseError.message))
             }
         })
     }
+
+    fun addNote(note: Note, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        val newNoteRef = databaseRef.push() // genera un nuevo nodo para la nota
+
+        newNoteRef.setValue(note)
+            .addOnSuccessListener {
+                onSuccess()
+            }
+            .addOnFailureListener { exception ->
+                onFailure(exception)
+            }
+    }
+
+
 }
+
+
 
 
 

@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,8 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,6 +52,7 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     companion object {
         private const val ADD_NOTE_REQUEST_CODE = 1
+        private const val SPEECH_REQUEST_CODE = 2
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,8 +67,8 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 NotesScreen(
                     notesList = notesList,
                     onAddNote = { startActivityForResult(Intent(this, AddNoteActivity::class.java), ADD_NOTE_REQUEST_CODE) },
+                    onAddNoteByVoice = { startSpeechToText() },
                     onReadNote = { note, locale -> readNoteContent(note, locale) },
-                    onSpeechToText = { speechToText() }, // Botón flotante para activar reconocimiento de voz
                     loggedInUser = loggedInUser,
                     onLogout = { logoutUser() }
                 )
@@ -87,15 +87,50 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         )
     }
 
+    private fun startSpeechToText() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+        startActivityForResult(intent, SPEECH_REQUEST_CODE)
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
         if (requestCode == ADD_NOTE_REQUEST_CODE && resultCode == RESULT_OK) {
             val idString = data?.getStringExtra("id")
             val id = idString?.toIntOrNull() ?: 0
             val title = data?.getStringExtra("noteTitle") ?: ""
             val content = data?.getStringExtra("noteContent") ?: ""
             if (title.isNotEmpty() && content.isNotEmpty()) {
-                notesList.add(Note(id, title, content))
+                val newNote = Note(id, title, content)
+                notesList.add(newNote)
+
+                // Llamada a NotesRepository.addNote con callbacks
+                NotesRepository.addNote(newNote,
+                    onSuccess = {
+                        Toast.makeText(this, "Nota agregada con éxito", Toast.LENGTH_SHORT).show()
+                    },
+                    onFailure = { exception ->
+                        Toast.makeText(this, "Error al agregar la nota: ${exception.message}", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+        } else if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
+            val speechResult = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            speechResult?.firstOrNull()?.let { speechText ->
+                val newNote = Note(0, "Nota de voz", speechText)
+                notesList.add(newNote)
+
+                // Llamada a NotesRepository.addNote con callbacks
+                NotesRepository.addNote(newNote,
+                    onSuccess = {
+                        Toast.makeText(this, "Nota de voz agregada con éxito", Toast.LENGTH_SHORT).show()
+                    },
+                    onFailure = { exception ->
+                        Toast.makeText(this, "Error al agregar la nota de voz: ${exception.message}", Toast.LENGTH_SHORT).show()
+                    }
+                )
             }
         }
     }
@@ -147,15 +182,6 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             else -> content
         }
     }
-
-    // Función para activar reconocimiento de voz
-    private fun speechToText() {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
-        }
-        startActivityForResult(intent, ADD_NOTE_REQUEST_CODE)
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -163,8 +189,8 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 fun NotesScreen(
     notesList: List<Note>,
     onAddNote: () -> Unit,
+    onAddNoteByVoice: () -> Unit,
     onReadNote: (Note, Locale) -> Unit,
-    onSpeechToText: () -> Unit,
     loggedInUser: String,
     onLogout: () -> Unit
 ) {
@@ -197,28 +223,23 @@ fun NotesScreen(
             )
         },
         floatingActionButton = {
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .wrapContentHeight(align = Alignment.Bottom)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.End // Mover hacia la derecha
-            ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 FloatingActionButton(
                     onClick = onAddNote,
                     contentColor = Color.White,
                     containerColor = Color(0xFF009688),
-                    modifier = Modifier
-                        .padding(bottom = 16.dp) // Espacio entre los botones
+                    modifier = Modifier.size(60.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar nota")
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
                 }
+                Spacer(modifier = Modifier.height(16.dp))
                 FloatingActionButton(
-                    onClick = onSpeechToText,
+                    onClick = onAddNoteByVoice,
                     contentColor = Color.White,
                     containerColor = Color(0xFFE91E63),
+                    modifier = Modifier.size(60.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Phone, contentDescription = "Hablar")
+                    Icon(imageVector = Icons.Default.Mic, contentDescription = null)
                 }
             }
         },
@@ -334,8 +355,8 @@ fun NotesScreenPreview() {
                 Note(2, "Pedido de ayuda", "¿Podrías ayudarme, por favor?")
             ),
             onAddNote = {},
+            onAddNoteByVoice = {},
             onReadNote = { _, _ -> },
-            onSpeechToText = {},
             loggedInUser = "Matias",
             onLogout = {}
         )
