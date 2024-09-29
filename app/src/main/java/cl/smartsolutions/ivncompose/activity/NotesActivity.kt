@@ -217,7 +217,7 @@ fun NotesScreen(
                 FloatingActionButton(
                     onClick = onAddNoteByVoice,
                     contentColor = Color.White,
-                    containerColor = Color(0xFF009688),
+                    containerColor = Color(0xFFE91E63),
                     modifier = Modifier.size(60.dp)
                 ) {
                     Icon(imageVector = Icons.Default.Mic, contentDescription = null)

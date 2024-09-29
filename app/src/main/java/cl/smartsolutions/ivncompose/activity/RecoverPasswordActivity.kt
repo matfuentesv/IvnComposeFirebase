@@ -1,7 +1,7 @@
 package cl.smartsolutions.ivncompose.activity
 
 import UserRepository.checkFirebaseConnection
-import UserRepository.getUserByEmail
+
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cl.smartsolutions.ivncompose.R
 import cl.smartsolutions.ivncompose.activity.ui.theme.IvnComposeTheme
+import getUserByEmail
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

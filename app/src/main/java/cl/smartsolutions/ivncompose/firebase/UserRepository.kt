@@ -1,3 +1,5 @@
+import UserRepository.checkFirebaseConnection
+import android.util.Log
 import cl.smartsolutions.ivnapp.model.User
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -21,16 +23,16 @@ object UserRepository {
         })
     }
 
-    // Inserta un usuario en Firebase
+
     fun registerUserFirebase(user: User, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         checkFirebaseConnection { isConnected ->
             if (isConnected) {
-                // Verifica si el usuario ya existe
+
                 validateUserExistFirebase(user.getRut()) { exists ->
                     if (!exists) {
                         val databaseRef = FirebaseDatabase.getInstance().reference.child("Users").child(user.getRut())
                         databaseRef.setValue(user).addOnSuccessListener {
-                            onSuccess() // Usuario registrado exitosamente
+                            onSuccess()
                         }.addOnFailureListener { error ->
                             onFailure(error.message ?: "Error desconocido")
                         }
@@ -49,17 +51,19 @@ object UserRepository {
         connectedRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val connected = snapshot.getValue(Boolean::class.java) ?: false
+                Log.d("FirebaseConnection", "Conectado: $connected")
                 onConnected(connected)
             }
 
             override fun onCancelled(error: DatabaseError) {
-                println("Error al verificar la conexión: ${error.message}")
+                Log.e("FirebaseConnection", "Error al verificar la conexión: ${error.message}")
                 onConnected(false)
             }
         })
     }
+}
 
-    // Valida email y password para hacer login
+
     fun validateLoginFirebase(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
         checkFirebaseConnection { isConnected ->
             if (isConnected) {
@@ -67,7 +71,7 @@ object UserRepository {
                 databaseRef.orderByChild("email").equalTo(email).addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
                         if (dataSnapshot.exists()) {
-                            // Buscar el usuario y validar la contraseña
+
                             for (userSnapshot in dataSnapshot.children) {
                                 val storedPassword = userSnapshot.child("password").getValue(String::class.java)
                                 if (storedPassword == password) {
@@ -82,13 +86,15 @@ object UserRepository {
                     }
 
                     override fun onCancelled(databaseError: DatabaseError) {
-                        println("Error al verificar el email: ${databaseError.message}")
                         onResult(false, "Error al conectar con la base de datos")
                     }
                 })
+            } else {
+                onResult(false, "No se pudo conectar a Firebase.")
             }
         }
     }
+
 
     fun getUserByEmail(email: String, onResult: (User?, String?) -> Unit) {
         checkFirebaseConnection { isConnected ->
@@ -102,7 +108,7 @@ object UserRepository {
                                 val user = userSnapshot?.getValue(User::class.java)
 
                                 if (user != null) {
-                                    onResult(user, null) // Usuario encontrado
+                                    onResult(user, null)
                                 } else {
                                     onResult(null, "No se encontró el usuario con el email proporcionado")
                                 }
@@ -121,4 +127,4 @@ object UserRepository {
         }
     }
 
-}
+

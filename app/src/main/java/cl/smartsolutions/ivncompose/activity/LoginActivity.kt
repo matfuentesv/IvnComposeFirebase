@@ -1,7 +1,7 @@
 package cl.smartsolutions.ivncompose.activity
 
-import UserRepository.getUserByEmail
-import UserRepository.validateLoginFirebase
+
+import UserRepository.checkFirebaseConnection
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
@@ -17,13 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,8 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cl.smartsolutions.ivnapp.model.User
 import cl.smartsolutions.ivncompose.R
-import cl.smartsolutions.ivncompose.activity.ui.theme.IvnComposeTheme
-
+import cl.smartsolutions.ivncompose.ui.theme.IvnComposeTheme
+import getUserByEmail
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import validateLoginFirebase
 import java.util.*
 
 class LoginActivity : ComponentActivity(), TextToSpeech.OnInitListener {
@@ -46,7 +43,6 @@ class LoginActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private lateinit var textToSpeech: TextToSpeech
     private lateinit var vibrator: Vibrator
 
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -58,128 +54,161 @@ class LoginActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             IvnComposeTheme {
                 var email by remember { mutableStateOf("") }
                 var password by remember { mutableStateOf("") }
+                var isLoading by remember { mutableStateOf(false) }
                 val isLoginEnabled = email.isNotEmpty() && password.isNotEmpty()
+                val coroutineScope = rememberCoroutineScope()
 
                 val gradientColors = listOf(
                     Color(0xFFFFFFFF),
                     Color(0xFF030A25)
                 )
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Brush.verticalGradient(gradientColors)),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.logo),
-                        contentDescription = null,
-                        modifier = Modifier.size(100.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
 
-                    Text(
-                        text = "Voz Inclusiva App",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email", color = Color.Black) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        colors = TextFieldDefaults.colors(Color.Black, Color.Black)
-                    )
+                            .fillMaxSize()
+                            .background(Brush.verticalGradient(gradientColors)),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.logo),
+                            contentDescription = null,
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Voz Inclusiva App",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
 
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password", color = Color.Black) },
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        colors = TextFieldDefaults.colors(Color.Black, Color.Black)
-                    )
+                        Spacer(modifier = Modifier.height(32.dp))
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email", color = Color.Black) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            colors = TextFieldDefaults.colors(Color.Black, Color.Black)
+                        )
 
-                    Button(
-                        onClick = {
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                            validateLoginFirebase(email, password) { isSuccess, errorMessage ->
-                                if (isSuccess) {
-                                    // Obtenemos el usuario por el email para acceder a sus datos
-                                    getUserByEmail(email) { user, userErrorMessage ->
-                                        if (user != null) {
-                                            // Comparamos la contraseña
-                                            if (user.getPassword() == password) {
-                                                // Si la contraseña es correcta, iniciamos la actividad NotesActivity
-                                                val intent = Intent(this@LoginActivity, NotesActivity::class.java)
-                                                intent.putExtra("loggedInUser", user.getFirstName()) // Pasamos el nombre del usuario
-                                                startActivity(intent)
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Password", color = Color.Black) },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            colors = TextFieldDefaults.colors(Color.Black, Color.Black)
+                        )
 
-                                                // Mostramos feedback de bienvenida
-                                                showLoginErrorFeedback("Bienvenido ${user.getFirstName()}")
-                                            } else {
-                                                // Si la contraseña es incorrecta
-                                                showLoginErrorFeedback("Usuario y/o contraseña incorrecta")
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Button(
+                            onClick = {
+                                if (isLoginEnabled && !isLoading) {
+                                    isLoading = true
+
+                                    retryFirebaseConnection(attempts = 3) { isConnected ->
+                                        if (isConnected) {
+                                            validateLoginFirebase(email, password) { isSuccess, errorMessage ->
+                                                isLoading = false
+
+                                                if (isSuccess) {
+                                                    getUserByEmail(email) { user, userErrorMessage ->
+                                                        isLoading = false
+                                                        if (user != null && user.getPassword() == password) {
+                                                            val intent = Intent(this@LoginActivity, NotesActivity::class.java)
+                                                            intent.putExtra("loggedInUser", user.getFirstName())
+                                                            startActivity(intent)
+                                                            showLoginErrorFeedback("Bienvenido ${user.getFirstName()}")
+                                                        } else {
+                                                            showLoginErrorFeedback(userErrorMessage ?: "Error desconocido al obtener usuario")
+                                                        }
+                                                    }
+                                                } else {
+                                                    showLoginErrorFeedback(errorMessage ?: "Error desconocido durante el login")
+                                                }
                                             }
                                         } else {
-                                            // Si no se encuentra el usuario, mostramos el mensaje de error
-                                            showLoginErrorFeedback(userErrorMessage ?: "Error desconocido al obtener usuario")
+                                            showLoginErrorFeedback("No se pudo conectar a Firebase. Verifique su conexión a Internet.")
+                                            isLoading = false
                                         }
                                     }
-                                } else {
-                                    // Si hubo un error en la validación del login (conexión o error genérico)
-                                    showLoginErrorFeedback(errorMessage ?: "Error desconocido durante el login")
                                 }
+                            },
+                            enabled = isLoginEnabled && !isLoading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            } else {
+                                Text(text = "LOGIN")
                             }
+                        }
 
-                        },
-                        enabled = isLoginEnabled,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "¿Olvidaste tu contraseña?",
+                            modifier = Modifier.clickable {
+                                startActivity(Intent(this@LoginActivity, RecoverPasswordActivity::class.java))
+                            },
+                            color = Color.White,
+                            fontSize = 18.sp
                         )
-                    ) {
-                        Text(text = "LOGIN")
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "¿No tienes una cuenta? regístrate",
+                            modifier = Modifier.clickable {
+                                startActivity(Intent(this@LoginActivity, RegisterActivity::class.java))
+                            },
+                            color = Color.White,
+                            fontSize = 18.sp
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "¿Olvidaste tu contraseña?",
-                        modifier = Modifier.clickable {
-                            startActivity(Intent(this@LoginActivity, RecoverPasswordActivity::class.java))
-                        },
-                        color = Color.White,
-                        fontSize = 18.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "¿No tienes una cuenta? regístrate",
-                        modifier = Modifier.clickable {
-                            startActivity(Intent(this@LoginActivity, RegisterActivity::class.java))
-                        },
-                        color = Color.White,
-                        fontSize = 18.sp
-                    )
+                    if (isLoading) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize().background(Color(0x80000000))
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
                 }
+            }
+        }
+    }
+
+    private fun retryFirebaseConnection(attempts: Int = 3, onConnected: (Boolean) -> Unit) {
+        checkFirebaseConnection { isConnected ->
+            if (isConnected) {
+                onConnected(true)
+            } else if (attempts > 1) {
+                GlobalScope.launch {
+                    kotlinx.coroutines.delay(1000)
+                    retryFirebaseConnection(attempts - 1, onConnected)
+                }
+            } else {
+                onConnected(false)
             }
         }
     }

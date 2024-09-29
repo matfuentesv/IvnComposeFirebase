@@ -72,15 +72,10 @@ dependencies {
     implementation ("androidx.compose.material:material-icons-core:1.0.1")
     implementation ("androidx.compose.material:material-icons-extended:1.7.2")
     dependencies {
-        // JUnit para pruebas unitarias
+
         testImplementation("junit:junit:4.13.2")
-
-        // Mockito para crear mocks
         testImplementation(libs.mockito.core)
-        // Mockito para crear mocks
         testImplementation ("org.mockito:mockito-core:3.12.4")
-
-        // Mockito Kotlin para un mejor soporte en Kotlin
         testImplementation ("org.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
 
     }

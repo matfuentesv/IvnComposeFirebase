@@ -31,7 +31,7 @@ object NotesRepository {
     }
 
     fun addNote(note: Note, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-        val newNoteRef = databaseRef.push() // genera un nuevo nodo para la nota
+        val newNoteRef = databaseRef.push()
 
         newNoteRef.setValue(note)
             .addOnSuccessListener {
@@ -45,37 +45,3 @@ object NotesRepository {
 
 }
 
-
-
-
-
-
-
-//    // Función para leer productos
-//    fun getProductos(onProductosLoaded: (List<ItemProducto>) -> Unit, onFailure: (Exception) -> Unit) {
-//        db.collection("productos001")
-//            .get()
-//            .addOnSuccessListener { result ->
-//                val productos = result.map { document ->
-//                    document.toObject(ItemProducto::class.java)
-//                }
-//                onProductosLoaded(productos)
-//            }
-//            .addOnFailureListener { e -> onFailure(e) }
-//    }
-//
-//    // Función para actualizar un producto
-//    fun updateProducto(productId: String, newPrecio: Double, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-//        db.collection("productos001").document(productId)
-//            .update("precio", newPrecio)
-//            .addOnSuccessListener { onSuccess() }
-//            .addOnFailureListener { e -> onFailure(e) }
-//    }
-//
-//    // Función para eliminar un producto
-//    fun deleteProducto(productId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-//        db.collection("productos001").document(productId)
-//            .delete()
-//            .addOnSuccessListener { onSuccess() }
-//            .addOnFailureListener { e -> onFailure(e) }
-//    }
