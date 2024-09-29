@@ -38,6 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.smartsolutions.ivnapp.model.Note
 import cl.smartsolutions.ivncompose.R
+import cl.smartsolutions.ivncompose.firebase.NotesRepository
 import cl.smartsolutions.ivncompose.ui.theme.IvnComposeTheme
 import kotlinx.coroutines.launch
 import java.util.*
@@ -71,16 +72,27 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             }
         }
 
-        loadNotes()
+        // Obtiene las notas desde Firebase
+        NotesRepository.getNotes(
+            onNotesLoaded = { notes ->
+                notesList.clear()
+                notesList.addAll(notes)
+            },
+            onFailure = { exception ->
+                Toast.makeText(this, "Error al cargar las notas: ${exception.message}", Toast.LENGTH_SHORT).show()
+            }
+        )
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == ADD_NOTE_REQUEST_CODE && resultCode == RESULT_OK) {
+            val idString = data?.getStringExtra("id")
+            val id = idString?.toIntOrNull() ?: 0
             val title = data?.getStringExtra("noteTitle") ?: ""
             val content = data?.getStringExtra("noteContent") ?: ""
             if (title.isNotEmpty() && content.isNotEmpty()) {
-                notesList.add(Note(title, content))
+                notesList.add(Note(id,title,content))
             }
         }
     }
@@ -88,21 +100,21 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private fun loadNotes() {
         notesList.addAll(
             listOf(
-                Note("Saludo", "Hola, ¿cómo estás?"),
-                Note("Pedido de ayuda", "¿Podrías ayudarme, por favor?"),
-                Note("Pregunta por dirección", "¿Dónde está el baño?"),
-                Note("Pedido de información", "¿Puedes escribir lo que estás diciendo?"),
-                Note("Explicación de sordera", "Soy sordo/a, no puedo escuchar. Por favor, lee mi mensaje."),
-                Note("Pedido de bebida", "Me gustaría un vaso de agua, por favor."),
-                Note("Gracias", "Muchas gracias por tu ayuda."),
-                Note("Llamar la atención", "Disculpa, ¿puedes mirarme un momento?"),
-                Note("Comunicación alternativa", "¿Podemos comunicarnos por escrito?"),
-                Note("Pedido de comida", "Quisiera pedir una hamburguesa sin queso, por favor."),
-                Note("Confirmación", "Sí, entiendo."),
-                Note("Negación", "No, no necesito ayuda, gracias."),
-                Note("Llamada de emergencia", "Por favor, llama al 133, hay una emergencia."),
-                Note("Despedida", "Adiós, que tengas un buen día."),
-                Note("Pregunta por tiempo", "¿Qué hora es?")
+                Note(1,"Saludo", "Hola, ¿cómo estás?"),
+                Note(2,"Pedido de ayuda", "¿Podrías ayudarme, por favor?"),
+                Note(3,"Pregunta por dirección", "¿Dónde está el baño?"),
+                Note(4,"Pedido de información", "¿Puedes escribir lo que estás diciendo?"),
+                Note(5,"Explicación de sordera", "Soy sordo/a, no puedo escuchar. Por favor, lee mi mensaje."),
+                Note(6,"Pedido de bebida", "Me gustaría un vaso de agua, por favor."),
+                Note(7,"Gracias", "Muchas gracias por tu ayuda."),
+                Note(8,"Llamar la atención", "Disculpa, ¿puedes mirarme un momento?"),
+                Note(9,"Comunicación alternativa", "¿Podemos comunicarnos por escrito?"),
+                Note(10,"Pedido de comida", "Quisiera pedir una hamburguesa sin queso, por favor."),
+                Note(11,"Confirmación", "Sí, entiendo."),
+                Note(12,"Negación", "No, no necesito ayuda, gracias."),
+                Note(13,"Llamada de emergencia", "Por favor, llama al 133, hay una emergencia."),
+                Note(14,"Despedida", "Adiós, que tengas un buen día."),
+                Note(15,"Pregunta por tiempo", "¿Qué hora es?")
             )
         )
     }
@@ -313,8 +325,8 @@ fun NotesScreenPreview() {
     IvnComposeTheme {
         NotesScreen(
             notesList = listOf(
-                Note("Saludo", "Hola, ¿cómo estás?"),
-                Note("Pedido de ayuda", "¿Podrías ayudarme, por favor?")
+                Note(1,"Saludo", "Hola, ¿cómo estás?"),
+                Note(2,"Pedido de ayuda", "¿Podrías ayudarme, por favor?")
             ),
             onAddNote = {},
             onReadNote = { _, _ -> },

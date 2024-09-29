@@ -53,6 +53,7 @@ fun AddNoteScreen(
     onSaveNote: (Note) -> Unit,
     onBackPressed: () -> Unit
 ) {
+    var id by remember { mutableStateOf(0) }
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     val isFormValid = title.isNotBlank() && content.isNotBlank()
@@ -123,7 +124,7 @@ fun AddNoteScreen(
                     Button(
                         onClick = {
                             if (isFormValid) {
-                                val note = Note(title = title, content = content)
+                                val note = Note(id = id,title = title, content = content)
                                 onSaveNote(note)
                             }
                         },

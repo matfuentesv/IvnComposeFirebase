@@ -1,8 +1,13 @@
 package cl.smartsolutions.ivnapp.model
 
-import java.io.Serializable
+
 
 data class Note(
+    val id: Int,
     val title: String,
     val content: String
-): Serializable
+){
+    constructor() : this(0, "", "")
+
+
+}
