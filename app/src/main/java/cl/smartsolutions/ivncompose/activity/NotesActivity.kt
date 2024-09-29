@@ -2,6 +2,7 @@ package cl.smartsolutions.ivncompose.activity
 
 import android.content.Intent
 import android.os.Bundle
+import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -66,6 +68,7 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     notesList = notesList,
                     onAddNote = { startActivityForResult(Intent(this, AddNoteActivity::class.java), ADD_NOTE_REQUEST_CODE) },
                     onReadNote = { note, locale -> readNoteContent(note, locale) },
+                    onSpeechToText = { speechToText() }, // Botón flotante para activar reconocimiento de voz
                     loggedInUser = loggedInUser,
                     onLogout = { logoutUser() }
                 )
@@ -92,31 +95,9 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             val title = data?.getStringExtra("noteTitle") ?: ""
             val content = data?.getStringExtra("noteContent") ?: ""
             if (title.isNotEmpty() && content.isNotEmpty()) {
-                notesList.add(Note(id,title,content))
+                notesList.add(Note(id, title, content))
             }
         }
-    }
-
-    private fun loadNotes() {
-        notesList.addAll(
-            listOf(
-                Note(1,"Saludo", "Hola, ¿cómo estás?"),
-                Note(2,"Pedido de ayuda", "¿Podrías ayudarme, por favor?"),
-                Note(3,"Pregunta por dirección", "¿Dónde está el baño?"),
-                Note(4,"Pedido de información", "¿Puedes escribir lo que estás diciendo?"),
-                Note(5,"Explicación de sordera", "Soy sordo/a, no puedo escuchar. Por favor, lee mi mensaje."),
-                Note(6,"Pedido de bebida", "Me gustaría un vaso de agua, por favor."),
-                Note(7,"Gracias", "Muchas gracias por tu ayuda."),
-                Note(8,"Llamar la atención", "Disculpa, ¿puedes mirarme un momento?"),
-                Note(9,"Comunicación alternativa", "¿Podemos comunicarnos por escrito?"),
-                Note(10,"Pedido de comida", "Quisiera pedir una hamburguesa sin queso, por favor."),
-                Note(11,"Confirmación", "Sí, entiendo."),
-                Note(12,"Negación", "No, no necesito ayuda, gracias."),
-                Note(13,"Llamada de emergencia", "Por favor, llama al 133, hay una emergencia."),
-                Note(14,"Despedida", "Adiós, que tengas un buen día."),
-                Note(15,"Pregunta por tiempo", "¿Qué hora es?")
-            )
-        )
     }
 
     private fun logoutUser() {
@@ -166,6 +147,15 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             else -> content
         }
     }
+
+    // Función para activar reconocimiento de voz
+    private fun speechToText() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
+        }
+        startActivityForResult(intent, ADD_NOTE_REQUEST_CODE)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -174,6 +164,7 @@ fun NotesScreen(
     notesList: List<Note>,
     onAddNote: () -> Unit,
     onReadNote: (Note, Locale) -> Unit,
+    onSpeechToText: () -> Unit,
     loggedInUser: String,
     onLogout: () -> Unit
 ) {
@@ -206,15 +197,29 @@ fun NotesScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddNote,
-                contentColor = Color.White,
-                containerColor = Color(0xFF009688),
+            Column(
                 modifier = Modifier
-                    .size(130.dp)
-                    .padding(32.dp)
+                    .fillMaxHeight()
+                    .wrapContentHeight(align = Alignment.Bottom)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.End // Mover hacia la derecha
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                FloatingActionButton(
+                    onClick = onAddNote,
+                    contentColor = Color.White,
+                    containerColor = Color(0xFF009688),
+                    modifier = Modifier
+                        .padding(bottom = 16.dp) // Espacio entre los botones
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar nota")
+                }
+                FloatingActionButton(
+                    onClick = onSpeechToText,
+                    contentColor = Color.White,
+                    containerColor = Color(0xFFE91E63),
+                ) {
+                    Icon(imageVector = Icons.Default.Phone, contentDescription = "Hablar")
+                }
             }
         },
         content = { paddingValues ->
@@ -325,11 +330,12 @@ fun NotesScreenPreview() {
     IvnComposeTheme {
         NotesScreen(
             notesList = listOf(
-                Note(1,"Saludo", "Hola, ¿cómo estás?"),
-                Note(2,"Pedido de ayuda", "¿Podrías ayudarme, por favor?")
+                Note(1, "Saludo", "Hola, ¿cómo estás?"),
+                Note(2, "Pedido de ayuda", "¿Podrías ayudarme, por favor?")
             ),
             onAddNote = {},
             onReadNote = { _, _ -> },
+            onSpeechToText = {},
             loggedInUser = "Matias",
             onLogout = {}
         )
