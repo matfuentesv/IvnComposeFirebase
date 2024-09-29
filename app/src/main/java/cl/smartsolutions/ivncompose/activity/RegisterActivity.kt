@@ -127,7 +127,7 @@ fun RegisterScreen(
                 )
             )
             if (rutError.isNotEmpty()) {
-                Text(text = rutError, color = Color.Red, fontSize = 12.sp)
+                Text(text = rutError, color = Color.Red, fontSize = 18.sp)
             }
 
             OutlinedTextField(
@@ -149,7 +149,7 @@ fun RegisterScreen(
                 )
             )
             if (nameError.isNotEmpty()) {
-                Text(text = nameError, color = Color.Red, fontSize = 12.sp)
+                Text(text = nameError, color = Color.Red, fontSize = 18.sp)
             }
 
             OutlinedTextField(
@@ -171,7 +171,7 @@ fun RegisterScreen(
                 )
             )
             if (lastNameError.isNotEmpty()) {
-                Text(text = lastNameError, color = Color.Red, fontSize = 12.sp)
+                Text(text = lastNameError, color = Color.Red, fontSize = 18.sp)
             }
 
             OutlinedTextField(
@@ -198,7 +198,7 @@ fun RegisterScreen(
                 )
             )
             if (emailError.isNotEmpty()) {
-                Text(text = emailError, color = Color.Red, fontSize = 12.sp)
+                Text(text = emailError, color = Color.Red, fontSize = 18.sp)
             }
 
             OutlinedTextField(
@@ -223,14 +223,14 @@ fun RegisterScreen(
                 )
             )
             if (ageError.isNotEmpty()) {
-                Text(text = ageError, color = Color.Red, fontSize = 12.sp)
+                Text(text = ageError, color = Color.Red, fontSize = 18.sp)
             }
 
             OutlinedTextField(
                 value = password,
                 onValueChange = {
                     password = it
-                    passwordError = if (password.length < 6) "Contraseña debe tener al menos 6 caracteres" else ""
+                    passwordError = if (password.length < 6) "Contraseña debe ser al menos 6 caracteres" else ""
                 },
                 label = { Text("Contraseña", color = Color.Black) },
                 modifier = Modifier
@@ -246,7 +246,7 @@ fun RegisterScreen(
                 )
             )
             if (passwordError.isNotEmpty()) {
-                Text(text = passwordError, color = Color.Red, fontSize = 12.sp)
+                Text(text = passwordError, color = Color.Red, fontSize = 18.sp)
             }
 
             Spacer(modifier = Modifier.height(16.dp))

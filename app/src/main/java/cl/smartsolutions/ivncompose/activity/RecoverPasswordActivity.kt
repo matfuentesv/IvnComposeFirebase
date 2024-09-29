@@ -179,7 +179,7 @@ fun RecoverPasswordScreen(
             )
 
             if (emailError.isNotEmpty()) {
-                Text(text = emailError, color = Color.Red, fontSize = 12.sp)
+                Text(text = emailError, color = Color.Red, fontSize = 18.sp)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
