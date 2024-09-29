@@ -6,7 +6,7 @@ import com.google.firebase.database.ValueEventListener
 
 object UserRepository {
 
-    // Valida si el usuario existe por el rut
+
     fun validateUserExistFirebase(rut: String, onResult: (Boolean) -> Unit) {
         val databaseRef = FirebaseDatabase.getInstance().reference.child("Users").child(rut)
         databaseRef.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -44,7 +44,6 @@ object UserRepository {
         }
     }
 
-    // Valioda si la conexion fue exitosa
     fun checkFirebaseConnection(onConnected: (Boolean) -> Unit) {
         val connectedRef = FirebaseDatabase.getInstance().getReference(".info/connected")
         connectedRef.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -91,7 +90,6 @@ object UserRepository {
         }
     }
 
-    // Obtiene al usuario por el email
     fun getUserByEmail(email: String, onResult: (User?, String?) -> Unit) {
         checkFirebaseConnection { isConnected ->
             if (isConnected) {
@@ -100,12 +98,13 @@ object UserRepository {
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             if (dataSnapshot.exists()) {
-                                for (userSnapshot in dataSnapshot.children) {
-                                    val user = userSnapshot.getValue(User::class.java)
-                                    if (user != null) {
-                                        onResult(user, null)
-                                        return
-                                    }
+                                val userSnapshot = dataSnapshot.children.firstOrNull()
+                                val user = userSnapshot?.getValue(User::class.java)
+
+                                if (user != null) {
+                                    onResult(user, null) // Usuario encontrado
+                                } else {
+                                    onResult(null, "No se encontró el usuario con el email proporcionado")
                                 }
                             } else {
                                 onResult(null, "No se encontró el usuario con el email proporcionado")
@@ -113,42 +112,13 @@ object UserRepository {
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {
-                            println("Error al buscar el usuario por email: ${databaseError.message}")
                             onResult(null, "Error al buscar el usuario: ${databaseError.message}")
                         }
                     })
+            } else {
+                onResult(null, "No se pudo conectar a Firebase.")
             }
         }
     }
 
-
-
-    private val users = mutableListOf(
-        User("1-99","Matias", "Fuentes", "matias.fuentes.vasquez@gmail.com", "1234", 29),
-        User("1-9","Constanza", "Mundaca", "cmundaca@gmail.com", "admin123", 24),
-        User("1-9","Catalina", "Arriagada", "carriagada@gmail.com", "password2", 30),
-        User("1-9","Pedro", "Martinez", "pmartinez@gmail.com", "password3", 28)
-    )
-
-
-    fun validateUser(email: String, password: String): Boolean {
-        return users.any { it.getEmail() == email && it.getPassword() == password }
-    }
-
-    fun validateUserByEmail(email: String): User? {
-        return users.find { it.getEmail() == email }
-    }
-
-    fun getUsers(): MutableList<User> {
-        return mutableListOf(
-            User("1-99","Matias", "Fuentes", "matias.fuentes.vasquez@gmail.com", "1234", 29),
-            User("1-9","Constanza", "Mundaca", "cmundaca@gmail.com", "admin123", 24),
-            User("1-9","Catalina", "Arriagada", "carriagada@gmail.com", "password2", 30),
-            User("1-9","Pedro", "Martinez", "pmartinez@gmail.com", "password3", 28)
-        )
-    }
-
-    fun createUser(user: User){
-        users.add(user)
-    }
 }
