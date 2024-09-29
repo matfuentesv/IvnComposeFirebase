@@ -2,10 +2,14 @@ package cl.smartsolutions.ivncompose
 
 import cl.smartsolutions.ivnapp.model.Note
 import cl.smartsolutions.ivncompose.firebase.NotesRepository
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
-import org.junit.Assert.*
-class NoteTest {
+
+
+class NotesTest {
 
     private lateinit var notesRepository: NotesRepository
 
