@@ -8,7 +8,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,14 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -75,7 +72,6 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             }
         }
 
-        // Obtiene las notas desde Firebase
         NotesRepository.getNotes(
             onNotesLoaded = { notes ->
                 notesList.clear()
@@ -106,7 +102,6 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 val newNote = Note(id, title, content)
                 notesList.add(newNote)
 
-                // Llamada a NotesRepository.addNote con callbacks
                 NotesRepository.addNote(newNote,
                     onSuccess = {
                         Toast.makeText(this, "Nota agregada con éxito", Toast.LENGTH_SHORT).show()
@@ -122,7 +117,6 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 val newNote = Note(0, "Nota de voz", speechText)
                 notesList.add(newNote)
 
-                // Llamada a NotesRepository.addNote con callbacks
                 NotesRepository.addNote(newNote,
                     onSuccess = {
                         Toast.makeText(this, "Nota de voz agregada con éxito", Toast.LENGTH_SHORT).show()
@@ -166,19 +160,6 @@ class NotesActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         return when (content) {
             "Hola, ¿cómo estás?" -> "Hello, how are you?"
             "¿Podrías ayudarme, por favor?" -> "Could you help me, please?"
-            "¿Dónde está el baño?" -> "Where is the bathroom?"
-            "¿Puedes escribir lo que estás diciendo?" -> "Can you write what you're saying?"
-            "Soy sordo/a, no puedo escuchar. Por favor, lee mi mensaje." -> "I am deaf, I can't hear. Please read my message."
-            "Me gustaría un vaso de agua, por favor." -> "I would like a glass of water, please."
-            "Muchas gracias por tu ayuda." -> "Thank you very much for your help."
-            "Disculpa, ¿puedes mirarme un momento?" -> "Excuse me, can you look at me for a moment?"
-            "¿Podemos comunicarnos por escrito?" -> "Can we communicate in writing?"
-            "Quisiera pedir una hamburguesa sin queso, por favor." -> "I would like to order a hamburger without cheese, please."
-            "Sí, entiendo." -> "Yes, I understand."
-            "No, no necesito ayuda, gracias." -> "No, I don't need help, thank you."
-            "Por favor, llama al 133, hay una emergencia." -> "Please call 133, there is an emergency."
-            "Adiós, que tengas un buen día." -> "Goodbye, have a nice day."
-            "¿Qué hora es?" -> "What time is it?"
             else -> content
         }
     }
@@ -236,7 +217,7 @@ fun NotesScreen(
                 FloatingActionButton(
                     onClick = onAddNoteByVoice,
                     contentColor = Color.White,
-                    containerColor = Color(0xFFE91E63),
+                    containerColor = Color(0xFF009688),
                     modifier = Modifier.size(60.dp)
                 ) {
                     Icon(imageVector = Icons.Default.Mic, contentDescription = null)
@@ -264,7 +245,7 @@ fun NotesScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(notesList) { note ->
-                            NoteCard(note = note, onReadNote = onReadNote)
+                            AnimatedNoteCard(note = note, onReadNote = onReadNote)
                         }
                     }
                 }
@@ -274,74 +255,69 @@ fun NotesScreen(
 }
 
 @Composable
-fun NoteCard(note: Note, onReadNote: (Note, Locale) -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F6186)),
-        elevation = CardDefaults.cardElevation(6.dp)
+fun AnimatedNoteCard(note: Note, onReadNote: (Note, Locale) -> Unit) {
+    AnimatedVisibility(
+        visible = true,
+        enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+        exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = note.title,
-                    color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { },
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F6186)),
+            elevation = CardDefaults.cardElevation(6.dp)
+        ) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = note.title,
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = note.content,
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                LanguageFlag(
+                    painterResource(id = R.drawable.spain),
+                    "Español",
+                    Locale("es", "ES"),
+                    onReadNote = onReadNote,
+                    note = note
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = note.content,
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
+
+                LanguageFlag(
+                    painterResource(id = R.drawable.reino_unido),
+                    "English",
+                    Locale("en", "GB"),
+                    onReadNote = onReadNote,
+                    note = note
                 )
             }
-
-            AnimatedFlagButton(
-                painterResource(id = R.drawable.spain),
-                "Español",
-                Locale("es", "ES"),
-                onReadNote = onReadNote,
-                note = note
-            )
-
-            AnimatedFlagButton(
-                painterResource(id = R.drawable.reino_unido),
-                "English",
-                Locale("en", "GB"),
-                onReadNote = onReadNote,
-                note = note
-            )
         }
     }
 }
 
 @Composable
-fun AnimatedFlagButton(
+fun LanguageFlag(
     painter: Painter,
     contentDescription: String,
     locale: Locale,
     onReadNote: (Note, Locale) -> Unit,
     note: Note
 ) {
-    val scale = remember { Animatable(1f) }
-    val coroutineScope = rememberCoroutineScope()
-
     Image(
         painter = painter,
         contentDescription = contentDescription,
         modifier = Modifier
             .size(40.dp)
-            .scale(scale.value)
-            .shadow(8.dp, CircleShape)
-            .clickable {
-                coroutineScope.launch {
-                    scale.animateTo(0.9f)
-                    scale.animateTo(1f)
-                }
-                onReadNote(note, locale)
-            }
+            .clickable { onReadNote(note, locale) }
     )
 }
 
